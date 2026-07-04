@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>主眼道場</title>
+<style>
+  :root{
+    --navy:#183b56; --teal:#2f7180; --orange:#e8883a;
+    --bg:#faf7f2; --card:#ffffff; --ink:#1e2529; --line:#d7e1e5;
+    --good:#2e7d4f; --bad:#b3452f; --soft:#eaf4f5; --warm:#fff2e7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:15px; line-height:1.7;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:14px 16px 10px;
+  }
+  header h1{font-size:20px; letter-spacing:.12em;}
+  header .sub{font-size:11px; opacity:.75; letter-spacing:.05em;}
+  .rankline{display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;}
+  .rankbadge{
+    background:var(--orange); color:#fff; border-radius:999px;
+    font-size:12px; font-weight:bold; padding:2px 12px;
+  }
+  .streak{font-size:12px; opacity:.9;}
+  nav{
+    display:flex; background:var(--card); border-bottom:2px solid var(--line);
+    position:sticky; top:0; z-index:10;
+  }
+  nav button{
+    flex:1; border:none; background:none; padding:11px 2px; font-size:13px;
+    color:var(--teal); cursor:pointer; border-bottom:3px solid transparent;
+    font-family:inherit;
+  }
+  nav button.active{color:var(--navy); font-weight:bold; border-bottom-color:var(--orange);}
+  main{max-width:760px; margin:0 auto; padding:16px 14px 80px;}
+  section{display:none;}
+  section.active{display:block;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card.soft{background:var(--soft);}
+  .card.warm{background:var(--warm); border-color:#f0d9c2;}
+  .label{
+    display:inline-block; background:var(--teal); color:#fff; font-size:11px;
+    font-weight:bold; border-radius:4px; padding:1px 8px; margin-bottom:8px;
+  }
+  .label.orange{background:var(--orange);}
+  h2{font-size:16px; color:var(--navy); margin-bottom:8px;}
+  .lead{font-size:13px; color:#5a6b73; margin-bottom:14px;}
+  .shugan{
+    font-size:15px; line-height:1.9; background:var(--warm);
+    border-left:4px solid var(--orange); padding:12px 14px; border-radius:0 8px 8px 0;
+    margin:10px 0;
+  }
+  .choices{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+  .choices button{
+    text-align:left; background:#fff; border:1.5px solid var(--line); border-radius:10px;
+    padding:11px 14px; font-size:14px; cursor:pointer; font-family:inherit; line-height:1.6;
+    transition:background .15s;
+  }
+  .choices button:hover{background:var(--soft);}
+  .choices button:disabled{cursor:default;}
+  .choices button.correct{border-color:var(--good); background:#e9f5ee; font-weight:bold;}
+  .choices button.wrong{border-color:var(--bad); background:#faeae6;}
+  .choices button.dim{opacity:.5;}
+  .kaisetsu{margin-top:14px; border-top:1px dashed var(--line); padding-top:12px;}
+  .kaisetsu .row{display:flex; gap:8px; margin-bottom:8px; align-items:flex-start;}
+  .kaisetsu .tag{
+    flex-shrink:0; font-size:11px; font-weight:bold; color:#fff; background:var(--navy);
+    border-radius:4px; padding:1px 7px; margin-top:4px; white-space:nowrap;
+  }
+  .kaisetsu .tag.o{background:var(--orange);}
+  .verdict{font-weight:bold; font-size:15px; margin-bottom:10px;}
+  .verdict.ok{color:var(--good);}
+  .verdict.ng{color:var(--bad);}
+  .btn{
+    display:inline-block; background:var(--teal); color:#fff; border:none; border-radius:8px;
+    padding:10px 20px; font-size:14px; font-weight:bold; cursor:pointer; font-family:inherit;
+  }
+  .btn.orange{background:var(--orange);}
+  .btn.ghost{background:#fff; color:var(--teal); border:1.5px solid var(--teal);}
+  .btn.small{padding:6px 14px; font-size:12px; font-weight:normal;}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .beforeafter{margin-top:12px;}
+  .beforeafter .ba{
+    border-radius:8px; padding:10px 12px; font-size:13.5px; line-height:1.8; margin-bottom:6px;
+  }
+  .beforeafter .ba.b{background:#f2f2f0; color:#777; text-decoration-color:#bbb;}
+  .beforeafter .ba.a{background:#e9f5ee; border-left:4px solid var(--good);}
+  .beforeafter .ba .balabel{font-size:11px; font-weight:bold; display:block; margin-bottom:2px;}
+  .wbox{margin-bottom:14px;}
+  .wbox .whead{display:flex; align-items:baseline; gap:8px; margin-bottom:4px;}
+  .wbox .wnum{
+    background:var(--navy); color:#fff; font-size:12px; font-weight:bold;
+    border-radius:50%; width:22px; height:22px; display:inline-flex;
+    align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .wbox .wtitle{font-weight:bold; color:var(--navy); font-size:14px;}
+  .wbox .wguide{font-size:12px; color:#5a6b73; margin-bottom:6px;}
+  textarea{
+    width:100%; border:1.5px solid var(--line); border-radius:8px; padding:10px 12px;
+    font-size:14px; font-family:inherit; line-height:1.7; resize:vertical; min-height:58px;
+    background:#fff;
+  }
+  textarea:focus{outline:2px solid var(--teal); border-color:var(--teal);}
+  .checkgrid{display:flex; flex-direction:column; gap:6px; margin-top:10px;}
+  .checkrow{
+    display:flex; align-items:center; gap:8px; background:#fff;
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px;
+  }
+  .checkrow .cname{flex:1; font-size:13px;}
+  .checkrow button{
+    width:36px; height:30px; border-radius:6px; border:1.5px solid var(--line);
+    background:#fff; font-size:14px; cursor:pointer; font-family:inherit;
+  }
+  .checkrow button.on-o{background:#e9f5ee; border-color:var(--good); color:var(--good); font-weight:bold;}
+  .checkrow button.on-t{background:var(--warm); border-color:var(--orange); color:var(--orange); font-weight:bold;}
+  .saveditem{border-top:1px dashed var(--line); padding:12px 0;}
+  .saveditem .sdate{font-size:11px; color:#8a969c;}
+  .saveditem .stext{font-size:14px; margin:4px 0 8px; line-height:1.8;}
+  .saveditem .memo{background:var(--soft); border-radius:8px; padding:8px 10px; font-size:13px; margin-top:6px;}
+  .saveditem .memo .mlabel{font-size:11px; font-weight:bold; color:var(--teal);}
+  .bars{margin-top:10px;}
+  .barrow{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .barrow .bname{width:9em; font-size:12px; flex-shrink:0;}
+  .barrow .btrack{flex:1; background:#eee; border-radius:4px; height:14px; overflow:hidden;}
+  .barrow .bfill{background:var(--orange); height:100%; border-radius:4px; min-width:2px;}
+  .barrow .bnum{font-size:12px; width:2em; text-align:right;}
+  .statgrid{display:flex; gap:10px; flex-wrap:wrap;}
+  .stat{
+    flex:1; min-width:100px; background:var(--soft); border-radius:10px;
+    padding:10px; text-align:center;
+  }
+  .stat .snum{font-size:22px; font-weight:bold; color:var(--navy);}
+  .stat .sname{font-size:11px; color:#5a6b73;}
+  .doujoukun{
+    font-size:13px; line-height:2.1; text-align:center; color:var(--navy);
+    letter-spacing:.05em; padding:8px 0;
+  }
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#fff; border-radius:10px; padding:12px 20px;
+    font-size:13px; opacity:0; transition:all .3s; pointer-events:none;
+    max-width:90vw; text-align:center; z-index:99; line-height:1.6;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .drilltype{
+    display:inline-block; font-size:11px; font-weight:bold; color:var(--teal);
+    border:1px solid var(--teal); border-radius:999px; padding:1px 10px; margin-bottom:8px;
+  }
+  .progressnote{font-size:12px; color:#8a969c; margin-bottom:10px;}
+  .divider{border:none; border-top:1px dashed var(--line); margin:16px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>主眼道場</h1>
+  <div class="sub">書く前に、見抜く。</div>
+  <div class="rankline">
+    <span class="rankbadge" id="rankBadge">主眼見習い</span>
+    <span class="streak" id="streakInfo"></span>
+  </div>
+</header>
+
+<nav>
+  <button data-view="quiz" class="active">今日の一問</button>
+  <button data-view="repair">修理工房</button>
+  <button data-view="write">執筆室</button>
+  <button data-view="record">記録</button>
+</nav>
+
+<main>
+
+  <!-- ===== 今日の一問 ===== -->
+  <section id="view-quiz" class="active">
+    <div class="card">
+      <span class="label orange">今日の一問</span>
+      <span id="quizDate" style="font-size:12px; color:#8a969c;"></span>
+      <p class="lead" id="quizLead">この主眼、どう診断しますか。</p>
+      <div class="shugan" id="quizText"></div>
+      <div class="choices" id="quizChoices"></div>
+      <div id="quizResult"></div>
+    </div>
+    <div class="card soft" id="practiceCard" style="display:none;">
+      <p style="font-size:13px;">今日の分は診断済み。腕がなまるなら、もう一問。</p>
+      <div style="margin-top:8px;"><button class="btn ghost small" onclick="startPractice()">もう一問（練習）</button></div>
+    </div>
+  </section>
+
+  <!-- ===== 修理工房 ===== -->
+  <section id="view-repair">
+    <div class="card">
+      <span class="label">修理工房</span>
+      <p class="lead">弱い主眼は、捨てずに直す。部品を一つ替えるだけで、子どもが見えてきます。</p>
+      <div class="progressnote" id="repairProgress"></div>
+      <div id="repairBody"></div>
+    </div>
+  </section>
+
+  <!-- ===== 執筆室 ===== -->
+  <section id="view-write">
+    <div class="card">
+      <span class="label">執筆室</span>
+      <p class="lead">白紙に一文は書かない。四つの箱を、Bから順に埋めます。</p>
+
+      <div class="wbox">
+        <div class="whead"><span class="wnum">1</span><span class="wtitle">B｜終末の姿</span></div>
+        <div class="wguide">授業後、子どもが何をすることができるようになればよいか。教科の動詞で。</div>
+        <textarea id="boxB" placeholder="例: 単位分数にそろえて、たし算の仕方を説明することができる（「がんばる」は動詞ですが、教科の動詞ではありません）"></textarea>
+      </div>
+      <div class="wbox">
+        <div class="whead"><span class="wnum">2</span><span class="wtitle">A｜出発点</span></div>
+        <div class="wguide">そのBから見て、今の子どもは何をどう捉えているか。欠点ではなく、今ある見方を。</div>
+        <textarea id="boxA" placeholder="例: 分子どうし・分母どうしをそのまま足せばよいと考えている"></textarea>
+      </div>
+      <div class="wbox">
+        <div class="whead"><span class="wnum">3</span><span class="wtitle">ひっかかり</span></div>
+        <div class="wguide">Aのままでは説明しにくい事実・結果・友達の考えは何か。</div>
+        <textarea id="boxHook" placeholder="例: 図に表すと、答えが元の数より小さくなってしまう"></textarea>
+      </div>
+      <div class="wbox">
+        <div class="whead"><span class="wnum">4</span><span class="wtitle">プロセス</span></div>
+        <div class="wguide">何に着目し、何と何を比べ、どう表すか。</div>
+        <textarea id="boxP" placeholder="例: 単位分数に着目して、図・式・数直線を対応させる"></textarea>
+      </div>
+
+      <button class="btn orange" onclick="assemble()">一文を組み立てる</button>
+
+      <div id="assembleArea" style="display:none;">
+        <hr class="divider">
+        <div class="whead" style="margin-bottom:4px;"><span class="wtitle">主眼の一文（手直しOK）</span></div>
+        <textarea id="assembled" style="min-height:96px;"></textarea>
+
+        <div class="whead" style="margin:14px 0 4px;"><span class="wtitle">7項目セルフチェック</span></div>
+        <div class="wguide">全部○でなくて大丈夫。弱い場所が分かれば、授業は直せます。</div>
+        <div class="checkgrid" id="checkGrid"></div>
+
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" onclick="copyShugan()">コピー（指導案へ）</button>
+          <button class="btn ghost" onclick="saveShugan()">道場に保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="savedCard" style="display:none;">
+      <span class="label">保存した主眼</span>
+      <p class="lead">授業のあとに戻ってきて、更新メモをどうぞ。主眼は採点するものではなく、更新するものです。</p>
+      <div id="savedList"></div>
+    </div>
+  </section>
+
+  <!-- ===== 記録 ===== -->
+  <section id="view-record">
+    <div class="card">
+      <span class="label orange">わたしの記録</span>
+      <div class="statgrid" style="margin-top:6px;">
+        <div class="stat"><div class="snum" id="stPoints">0</div><div class="sname">道場ポイント</div></div>
+        <div class="stat"><div class="snum" id="stStreak">0</div><div class="sname">連続日数</div></div>
+        <div class="stat"><div class="snum" id="stAcc">-</div><div class="sname">診断的中率</div></div>
+        <div class="stat"><div class="snum" id="stWrote">0</div><div class="sname">書いた主眼</div></div>
+      </div>
+      <div id="rankProgress" style="margin-top:14px; font-size:13px;"></div>
+    </div>
+    <div class="card">
+      <h2>七つの目のいまの強さ</h2>
+      <p class="lead" id="weakLead">執筆室でセルフチェックすると、ここに伸びしろが表れます。</p>
+      <div class="bars" id="weakBars"></div>
+    </div>
+    <div class="card warm">
+      <h2 style="text-align:center;">道場訓</h2>
+      <div class="doujoukun">
+        むずかしいことをやさしく<br>
+        やさしいことをふかく<br>
+        ふかいことをおもしろく<br>
+        おもしろいことをまじめに<br>
+        まじめなことをゆかいに<br>
+        そしてゆかいなことは、あくまでゆかいに
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ===================== データ ===================== */
+
+const CATS = ["活動だけ", "到達だけ", "教師だけ", "抽象語だけ", "これは強い"];
+
+const QUIZ = [
+  {
+    text: "登場人物の気持ちについてグループで話し合うことができる。",
+    answer: "活動だけ",
+    why: "「話し合う」は手段。話し合った結果、子どもの読みの何が変わるのかが書かれていません。",
+    unseen: "終末に子どもがどんな読みの姿になれば成功なのか、教師にも参観者にも見えません。",
+    fix: "B（終末の姿）を教科の動詞で足す。例:「複数の叙述を関係付けて、人物像を説明することができる」。"
+  },
+  {
+    text: "異分母分数のたし算ができる。",
+    answer: "到達だけ",
+    why: "「できる」の中身がありません。何に着目して、どうやってできるようになるのかが不明です。",
+    unseen: "つまずいた子がどこで止まっているのか、授業のどこで力が付いたのかが見えません。",
+    fix: "プロセスを足す。「単位分数に着目し、図・式・数直線を対応させて」。"
+  },
+  {
+    text: "資料を提示し、米づくりの工夫に気付かせることができる。",
+    answer: "教師だけ",
+    why: "主語が教師です。「提示する」「気付かせる」は教師の行動で、子どもの学びの動きがありません。",
+    unseen: "子どもが何を比べ、何を関係付けるのかが見えず、展開が教師の説明で埋まります。",
+    fix: "子どもを主語に書き直す。「自然条件と人々の工夫を関係付けて説明することができる」。"
+  },
+  {
+    text: "見方・考え方を働かせて、深く考えることができる。",
+    answer: "抽象語だけ",
+    why: "どの教科のどの場面にも貼れる言葉だけで、何にどう着目するのかが不明です。",
+    unseen: "「深く考えた姿」を見取る手がかりがなく、評価が印象で決まってしまいます。",
+    fix: "教科固有の対象と動詞に置き換える。「単位分数に着目し」「条件をそろえて」など。"
+  },
+  {
+    text: "分子と分母をそれぞれ足せばよいと考える子どもたちが、答えの大きさと図が合わない場面で、単位分数に着目して図・式・数直線を対応させることを通して、同じ大きさの単位にそろえて異分母分数の加法の仕方を説明することができる。",
+    answer: "これは強い",
+    why: "A（分子と分母をそのまま足す）が具体的で、ひっかかり（図と合わない）がそのAを直撃しています。",
+    unseen: "導入・展開・終末で何を仕込めばよいかが、この一文だけで決まります。",
+    fix: "まねる一手: 自分の主眼でも、ひっかかりがAを直撃しているか確かめる。"
+  },
+  {
+    text: "空気を温める実験を安全に行うことができる。",
+    answer: "活動だけ",
+    why: "実験は手段。実験の先で、子どもが何を捉え直すのかが書かれていません。",
+    unseen: "結果が出たあと、何を話し合えばこの授業が成立するのかが見えません。",
+    fix: "ひっかかり（向きを変えても同じ変化が起こる）と、B（温度と関係付けて説明する）を足す。"
+  },
+  {
+    text: "跳び箱の正しい着手の仕方を身に付けさせる。",
+    answer: "教師だけ",
+    why: "「〜させる」は教師の願いです。子どもが何を見て、何を比べ、何を意識する姿かがありません。",
+    unseen: "子ども同士の観察や試行が計画に入らず、反復練習だけの時間になりやすくなります。",
+    fix: "動きの局面（踏切・着手・腰の移動）を、子どもが比べる姿に書き直す。"
+  },
+  {
+    text: "主体的に学習に取り組み、学びを深めることができる。",
+    answer: "抽象語だけ",
+    why: "どの授業にも貼れる文は、どの授業も表していません。",
+    unseen: "本時で何が起これば成功なのか、誰にも分かりません。",
+    fix: "本時の一場面に絞り、対象と動詞を具体にする。"
+  },
+  {
+    text: "米づくりの工夫について理解することができる。",
+    answer: "到達だけ",
+    why: "「理解する」姿が、何を関係付けて何を説明する姿なのかが見えません。",
+    unseen: "ノートのどの記述を見れば「理解した」と言えるのか、評価が決められません。",
+    fix: "Bを具体化する。「自然条件と人々の工夫を関係付けて説明することができる」。"
+  },
+  {
+    text: "速く走り強く跳べば台上前転ができると考える子どもたちが、助走の速さだけでは回転できない場面で、互いの動きを局面ごとに観察しタイミングを比べることを通して、踏切・着手・腰の移動のつながりを意識して台上前転をすることができる。",
+    answer: "これは強い",
+    why: "A（速く走れば回れる）という思い込みが、ひっかかり（速さだけでは回れない）でちゃんと揺れています。",
+    unseen: "見取りどころ（踏切・着手・腰のつながり）が明確で、評価がそのまま決まります。",
+    fix: "まねる一手: Bを「〜を意識して〜することができる」の形で、動きに落とす。"
+  }
+];
+
+const REPAIRS = [
+  {
+    type: "A修理", subject: "算数",
+    before: "分数の計算が理解できていない子どもたちが、図を使って考えることを通して、異分母分数のたし算ができる。",
+    question: "Aが「できない子リスト」になっています。今ある見方が見えるAはどれ？",
+    options: [
+      { t: "分子どうし・分母どうしをそのまま足せばよいと考える子どもたち", good: true,
+        fb: "その通り。誤りに見えて、実は「整数のたし算」という既習を使っている見方です。ここが授業の出発点になります。" },
+      { t: "計算力が不足している子どもたち", good: false,
+        fb: "まだ欠点リストです。「不足」からは、授業の入口が決められません。" },
+      { t: "算数への意欲が低い子どもたち", good: false,
+        fb: "態度の話になっています。主眼のAは「何をどう捉えているか」です。" }
+    ],
+    after: "分子どうし・分母どうしをそのまま足せばよいと考える子どもたちが、答えの大きさが図と合わない場面で、単位分数に着目して図と式を対応させることを通して、同じ大きさの単位にそろえて計算の仕方を説明することができる。"
+  },
+  {
+    type: "A修理", subject: "国語",
+    before: "登場人物の気持ちを読み取れない子どもたちが、話し合いを通して、人物像を捉えることができる。",
+    question: "このAから、今ある見方が見えるAに替えるなら？",
+    options: [
+      { t: "一つの行動だけから、人物を「やさしい」「意地悪」と決めて読む子どもたち", good: true,
+        fb: "その通り。子どもはすでに読んでいます。ただ、根拠が一つだけ。だから「複数の叙述を関係付ける」授業になるのです。" },
+      { t: "読解力が十分に身に付いていない子どもたち", good: false,
+        fb: "「不十分」からは何も始まりません。今どう読んでいるかを書くと、授業の入口が見えます。" },
+      { t: "発表が苦手で自信がもてない子どもたち", good: false,
+        fb: "学級の実態としては大事ですが、本時の読みの見方とは別の話です。" }
+    ],
+    after: "一つの行動だけから人物を決めて読む子どもたちが、同じ人物の異なる姿が表れる場面で、行動・会話・情景を場面どうしで比べることを通して、複数の叙述を関係付けて人物像を捉えることができる。"
+  },
+  {
+    type: "動詞修理", subject: "理科",
+    before: "空気の変化について、実験結果をもとにじっくり考えることができる。",
+    question: "「じっくり考える」を、理科らしい動きに置き換えるなら？",
+    options: [
+      { t: "変える条件とそろえる条件を整理し、結果を比較する", good: true,
+        fb: "その通り。理科の「考える」は、条件の制御と比較で姿になります。これなら授業中に見取れます。" },
+      { t: "グループで意見を出し合う", good: false,
+        fb: "話し合いは大事ですが、これは活動です。理科の考え方には、まだなっていません。" },
+      { t: "実験の感想を発表する", good: false,
+        fb: "感想は考察ではありません。結果と結果を比べたとき、初めて理科の言葉が生まれます。" }
+    ],
+    after: "空気の変化について、変える条件とそろえる条件を整理し、結果を比較して説明することができる。"
+  },
+  {
+    type: "動詞修理", subject: "社会",
+    before: "米づくりのさかんな地域について、資料をもとに理解することができる。",
+    question: "「理解する」を、社会科らしい動きに置き換えるなら？",
+    options: [
+      { t: "自然条件と人々の工夫を関係付けて説明する", good: true,
+        fb: "その通り。社会科の「理解」は、事象と事象を関係付けて語れることです。ノートで見取れる形になりました。" },
+      { t: "資料をくわしく調べる", good: false,
+        fb: "調べるのは入口です。調べた先で、何と何をつなぐのかがまだありません。" },
+      { t: "米づくりの大切さを感じ取る", good: false,
+        fb: "「感じ取る」は見取れません。どんな記述が出れば成功なのか、決められない言葉です。" }
+    ],
+    after: "米づくりのさかんな地域について、自然条件と人々の工夫を関係付けて説明することができる。"
+  },
+  {
+    type: "ひっかかり修理", subject: "理科",
+    before: "栓が動くのは温めた空気が上へ逃げるからだと考える子どもたちが、教師が「空気は温めると体積が増える」と図で説明する場面で、体積の変化を理解することができる。",
+    question: "ひっかかりが教師の説明になっています。子どもが「おや？」と立ち止まるのはどれ？",
+    options: [
+      { t: "容器の向きを変えても密閉しても、栓が同じように動く", good: true,
+        fb: "その通り。「上に逃げる」では説明できなくなる事実です。ここで子どもは自分から考え始めます。" },
+      { t: "教師がもっと丁寧に図で説明する", good: false,
+        fb: "説明が丁寧になるほど、子どもは考えなくてよくなります。ひっかかりは、教えることではなく出会わせることです。" },
+      { t: "教科書の結論を先に確認する", good: false,
+        fb: "結論を先に知った子は、実験を「答え合わせ」として眺めます。ひっかかりが消えます。" }
+    ],
+    after: "栓が動くのは温めた空気が上へ逃げるからだと考える子どもたちが、容器の向きを変えても同じ変化が起こる場面で、条件を制御した結果を比較することを通して、空気の体積は向きではなく温度と関係して変化すると説明することができる。"
+  },
+  {
+    type: "ひっかかり修理", subject: "学級活動",
+    before: "掃除がうまくいかないのはルールを守らない人のせいだと考える子どもたちが、教師が正しい掃除の手順を説明する場面で、掃除のめあてを決めることができる。",
+    question: "このひっかかりも教師の説明です。子どもの見方が揺れるのはどれ？",
+    options: [
+      { t: "場所や時間帯によって、困り事と必要な役割が違うことが見えてくる", good: true,
+        fb: "その通り。「守らない人のせい」では説明できない事実です。犯人探しが、仕組みの話に変わります。" },
+      { t: "教師がルールを守る大切さを改めて話す", good: false,
+        fb: "それは「守らない人のせい」というAを強化してしまいます。見方は揺れません。" },
+      { t: "班長がもう一度注意する", good: false,
+        fb: "注意で変わるなら、もう変わっています。Aのままでは処理できない事実が必要です。" }
+    ],
+    after: "掃除がうまくいかないのはルールを守らない人のせいだと考える子どもたちが、場所ごとの困り事や役割の違いを共有する場面で、互いの理由を比べて折り合いを付けることを通して、役割と行動を自分たちで決めることができる。"
+  }
+];
+
+const CHECK_ITEMS = [
+  "Aが見える", "ひっかかりがある", "子どもが主語", "教科らしい",
+  "Bが動詞で見える", "評価につながる", "一時間に収まる"
+];
+
+const RANKS = [
+  { pt: 0,   name: "主眼見習い" },
+  { pt: 10,  name: "A捕まえ名人" },
+  { pt: 25,  name: "ひっかかり職人" },
+  { pt: 50,  name: "B仕立て師" },
+  { pt: 100, name: "主眼師範" }
+];
+
+/* ===================== 状態 ===================== */
+
+const KEY = "shugan_dojo_v1";
+
+function defaultState() {
+  return {
+    points: 0,
+    lastDaily: "",        // 最後に「今日の一問」に答えた日 YYYY-MM-DD
+    streak: 0,
+    quizAnswered: 0,
+    quizCorrect: 0,
+    repairDone: [],       // 完了した修理のindex
+    saved: [],            // {date, text, checks:[0/1/2...], memo}
+    rankName: "主眼見習い"
+  };
+}
+
+let S = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return Object.assign(defaultState(), JSON.parse(raw));
+  } catch (e) { /* 壊れていたら初期化 */ }
+  return defaultState();
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+/* ===================== ユーティリティ ===================== */
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function dateSeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+let toastTimer = null;
+function toast(msg, ms) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), ms || 3200);
+}
+
+function rankOf(pt) {
+  let r = RANKS[0];
+  for (const x of RANKS) { if (pt >= x.pt) r = x; }
+  return r;
+}
+function addPoints(n) {
+  const before = rankOf(S.points).name;
+  S.points += n;
+  const after = rankOf(S.points).name;
+  save();
+  renderHeader();
+  if (before !== after) {
+    setTimeout(() => toast("昇段！ 今日からあなたは「" + after + "」。名刺に書いてもかまいません。", 4200), 600);
+  }
+}
+
+/* ===================== ヘッダー ===================== */
+
+function renderHeader() {
+  document.getElementById("rankBadge").textContent = rankOf(S.points).name;
+  const el = document.getElementById("streakInfo");
+  el.textContent = S.streak > 0 ? "連続 " + S.streak + " 日" : "";
+}
+
+/* ===================== タブ ===================== */
+
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll("main section").forEach(s => s.classList.remove("active"));
+    document.getElementById("view-" + btn.dataset.view).classList.add("active");
+    if (btn.dataset.view === "record") renderRecord();
+    if (btn.dataset.view === "write") renderSaved();
+  });
+});
+
+/* ===================== 今日の一問 ===================== */
+
+let currentQuiz = null;   // {q, isDaily}
+
+function initQuiz() {
+  const today = todayStr();
+  document.getElementById("quizDate").textContent = today.replace(/-/g, "/");
+
+  // ストリーク切れの声かけ（責めない）
+  if (S.lastDaily && S.lastDaily !== today) {
+    const gap = (new Date(today) - new Date(S.lastDaily)) / 86400000;
+    if (gap > 1 && S.streak > 0) {
+      S.streak = 0;
+      save();
+      setTimeout(() => toast("道場は逃げません。またどうぞ。", 3000), 800);
+    }
+  }
+
+  if (S.lastDaily === today) {
+    showAnsweredToday();
+  } else {
+    currentQuiz = { q: QUIZ[dateSeed() % QUIZ.length], isDaily: true };
+    renderQuiz();
+  }
+  renderHeader();
+}
+
+function showAnsweredToday() {
+  document.getElementById("quizLead").textContent = "今日の診断は終わりました。また明日、道場でお会いしましょう。";
+  document.getElementById("quizText").textContent = QUIZ[dateSeed() % QUIZ.length].text;
+  document.getElementById("quizChoices").innerHTML = "";
+  document.getElementById("quizResult").innerHTML = "";
+  document.getElementById("practiceCard").style.display = "block";
+}
+
+function startPractice() {
+  const dailyIdx = dateSeed() % QUIZ.length;
+  let idx = Math.floor(Math.random() * QUIZ.length);
+  if (QUIZ.length > 1) { while (idx === dailyIdx) idx = Math.floor(Math.random() * QUIZ.length); }
+  currentQuiz = { q: QUIZ[idx], isDaily: false };
+  document.getElementById("practiceCard").style.display = "none";
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const q = currentQuiz.q;
+  document.getElementById("quizLead").textContent = currentQuiz.isDaily
+    ? "この主眼、どう診断しますか。" : "練習問題。この主眼、どう診断しますか。";
+  document.getElementById("quizText").textContent = q.text;
+  document.getElementById("quizResult").innerHTML = "";
+  const box = document.getElementById("quizChoices");
+  box.innerHTML = "";
+  CATS.forEach(cat => {
+    const b = document.createElement("button");
+    b.textContent = cat;
+    b.addEventListener("click", () => answerQuiz(cat, b));
+    box.appendChild(b);
+  });
+}
+
+function answerQuiz(cat, clickedBtn) {
+  const q = currentQuiz.q;
+  const correct = (cat === q.answer);
+
+  document.querySelectorAll("#quizChoices button").forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.answer) b.classList.add("correct");
+    else if (b === clickedBtn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+
+  S.quizAnswered++;
+  if (correct) S.quizCorrect++;
+
+  if (currentQuiz.isDaily) {
+    const today = todayStr();
+    const yesterday = new Date(Date.now() - 86400000);
+    const yStr = yesterday.getFullYear() + "-" + String(yesterday.getMonth() + 1).padStart(2, "0") + "-" + String(yesterday.getDate()).padStart(2, "0");
+    S.streak = (S.lastDaily === yStr) ? S.streak + 1 : 1;
+    S.lastDaily = today;
+  }
+  save();
+  if (correct) addPoints(1);
+
+  const isStrong = (q.answer === "これは強い");
+  const tags = isStrong
+    ? ["正解", "どこが強いか", "この一文で見えること", "まねる一手"]
+    : ["正解", "なぜ弱いか", "見えなくなるもの", "直しの一手"];
+  const lines = [q.answer, q.why, q.unseen, q.fix];
+
+  let html = '<div class="kaisetsu">';
+  html += '<div class="verdict ' + (correct ? "ok" : "ng") + '">' +
+    (correct ? "お見事。" : "惜しい。診断は場数です。") + '</div>';
+  lines.forEach((line, i) => {
+    html += '<div class="row"><span class="tag' + (i === 3 ? " o" : "") + '">' + tags[i] + '</span><span>' + esc(line) + '</span></div>';
+  });
+  html += '</div>';
+  if (currentQuiz.isDaily) {
+    html += '<div style="margin-top:10px;"><button class="btn ghost small" onclick="startPractice()">もう一問（練習）</button></div>';
+  } else {
+    html += '<div style="margin-top:10px;"><button class="btn ghost small" onclick="startPractice()">さらにもう一問</button></div>';
+  }
+  document.getElementById("quizResult").innerHTML = html;
+  renderHeader();
+}
+
+/* ===================== 修理工房 ===================== */
+
+let repairIdx = 0;
+
+function initRepair() {
+  // 未完了の最初の問題から
+  repairIdx = 0;
+  for (let i = 0; i < REPAIRS.length; i++) {
+    if (!S.repairDone.includes(i)) { repairIdx = i; break; }
+  }
+  renderRepair();
+}
+
+function renderRepair() {
+  const r = REPAIRS[repairIdx];
+  document.getElementById("repairProgress").textContent =
+    "修理 " + (repairIdx + 1) + " / " + REPAIRS.length + "　（修理済み " + S.repairDone.length + " 件）";
+
+  let html = '<span class="drilltype">' + esc(r.type) + '｜' + esc(r.subject) + '</span>';
+  html += '<div class="shugan" style="border-left-color:#b3452f; background:#faeae6;">' + esc(r.before) + '</div>';
+  html += '<p style="font-size:14px; font-weight:bold; color:var(--navy); margin-top:10px;">' + esc(r.question) + '</p>';
+  html += '<div class="choices" id="repairChoices"></div>';
+  html += '<div id="repairResult"></div>';
+  document.getElementById("repairBody").innerHTML = html;
+
+  const box = document.getElementById("repairChoices");
+  r.options.forEach((op, i) => {
+    const b = document.createElement("button");
+    b.textContent = op.t;
+    b.addEventListener("click", () => answerRepair(i, b));
+    box.appendChild(b);
+  });
+}
+
+function answerRepair(i, clickedBtn) {
+  const r = REPAIRS[repairIdx];
+  const op = r.options[i];
+
+  if (!op.good) {
+    // 間違いは責めず、その選択肢だけ閉じて続行
+    clickedBtn.classList.add("wrong");
+    clickedBtn.disabled = true;
+    document.getElementById("repairResult").innerHTML =
+      '<div class="kaisetsu"><div class="row"><span class="tag">うーん</span><span>' + esc(op.fb) + '</span></div></div>';
+    return;
+  }
+
+  document.querySelectorAll("#repairChoices button").forEach((b, bi) => {
+    b.disabled = true;
+    if (r.options[bi].good) b.classList.add("correct"); else b.classList.add("dim");
+  });
+
+  const first = !S.repairDone.includes(repairIdx);
+  if (first) {
+    S.repairDone.push(repairIdx);
+    save();
+    addPoints(2);
+  }
+
+  let html = '<div class="kaisetsu">';
+  html += '<div class="verdict ok">修理完了。</div>';
+  html += '<div class="row"><span class="tag o">解説</span><span>' + esc(op.fb) + '</span></div>';
+  html += '<div class="beforeafter">';
+  html += '<div class="ba b"><span class="balabel">BEFORE</span>' + esc(r.before) + '</div>';
+  html += '<div class="ba a"><span class="balabel">AFTER</span>' + esc(r.after) + '</div>';
+  html += '</div>';
+  html += '<div style="margin-top:12px;"><button class="btn small" onclick="nextRepair()">次の修理へ</button></div>';
+  html += '</div>';
+  document.getElementById("repairResult").innerHTML = html;
+}
+
+function nextRepair() {
+  repairIdx = (repairIdx + 1) % REPAIRS.length;
+  renderRepair();
+  if (S.repairDone.length === REPAIRS.length && repairIdx === 0) {
+    toast("工房の在庫、全部直りました。あなたの目はもう飾りではありません。", 3600);
+  }
+}
+
+/* ===================== 執筆室 ===================== */
+
+let checks = new Array(CHECK_ITEMS.length).fill(0); // 0:未 1:○ 2:△
+
+function assemble() {
+  const B = document.getElementById("boxB").value.trim();
+  const A = document.getElementById("boxA").value.trim();
+  const H = document.getElementById("boxHook").value.trim();
+  const P = document.getElementById("boxP").value.trim();
+
+  if (!B && !A && !H && !P) {
+    toast("まずはBの箱から。「授業のあと、子どもは何ができれば成功？」");
+    return;
+  }
+
+  const strip = (s, tails) => {
+    let out = s.replace(/[。、\s]+$/, "");
+    for (const t of tails) { if (out.endsWith(t)) out = out.slice(0, -t.length); }
+    return out;
+  };
+  const a = strip(A, ["という子どもたち", "子どもたち"]);
+  const h = strip(H, ["という場面", "場面"]);
+  const p = strip(P, ["ことを通して", "を通して"]);
+  let b = strip(B, []);
+  if (!/できる$/.test(b)) b += "ことができる";
+
+  // 動詞や「〜ない」で終わる入力は「という」を挟まず直接つなぐ
+  const plain = /(ない|[うくぐすつぬふぶむる])$/;
+  const parts = [];
+  if (a) parts.push(a + (plain.test(a) ? "子どもたちが、" : "という子どもたちが、"));
+  if (h) parts.push(h + (plain.test(h) ? "場面で、" : "という授業場面で、"));
+  if (p) parts.push(p + "ことを通して、");
+  parts.push(b + "。");
+
+  document.getElementById("assembled").value = parts.join("");
+  document.getElementById("assembleArea").style.display = "block";
+  renderChecks();
+  document.getElementById("assembled").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function renderChecks() {
+  const grid = document.getElementById("checkGrid");
+  grid.innerHTML = "";
+  CHECK_ITEMS.forEach((name, i) => {
+    const row = document.createElement("div");
+    row.className = "checkrow";
+    const label = document.createElement("span");
+    label.className = "cname";
+    label.textContent = (i + 1) + ". " + name;
+    const bO = document.createElement("button");
+    bO.textContent = "○";
+    if (checks[i] === 1) bO.classList.add("on-o");
+    bO.addEventListener("click", () => { checks[i] = (checks[i] === 1 ? 0 : 1); renderChecks(); });
+    const bT = document.createElement("button");
+    bT.textContent = "△";
+    if (checks[i] === 2) bT.classList.add("on-t");
+    bT.addEventListener("click", () => { checks[i] = (checks[i] === 2 ? 0 : 2); renderChecks(); });
+    row.appendChild(label); row.appendChild(bO); row.appendChild(bT);
+    grid.appendChild(row);
+  });
+}
+
+function checkSummary() {
+  const o = [], t = [];
+  checks.forEach((c, i) => {
+    if (c === 1) o.push(CHECK_ITEMS[i]);
+    if (c === 2) t.push(CHECK_ITEMS[i]);
+  });
+  return { o, t };
+}
+
+function copyShugan() {
+  const text = document.getElementById("assembled").value.trim();
+  if (!text) { toast("まだ一文がありません。四つの箱からどうぞ。"); return; }
+  const s = checkSummary();
+  let out = "【主眼】\n" + text + "\n";
+  if (s.o.length || s.t.length) {
+    out += "【セルフチェック】\n";
+    if (s.o.length) out += "○ " + s.o.join("・") + "\n";
+    if (s.t.length) out += "△ " + s.t.join("・") + "\n";
+  }
+  const done = () => toast("コピーしました。指導案に貼って、明日の授業へ。");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(out).then(done, () => fallbackCopy(out, done));
+  } else {
+    fallbackCopy(out, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { toast("コピーできませんでした。手動で選択してください。"); }
+  document.body.removeChild(ta);
+}
+
+function saveShugan() {
+  const text = document.getElementById("assembled").value.trim();
+  if (!text) { toast("まだ一文がありません。四つの箱からどうぞ。"); return; }
+  S.saved.unshift({ date: todayStr(), text: text, checks: checks.slice(), memo: "" });
+  save();
+  addPoints(5);
+  checks = new Array(CHECK_ITEMS.length).fill(0);
+  renderChecks();
+  renderSaved();
+  toast("保存しました。授業のあと、更新メモで続きをどうぞ。");
+}
+
+function renderSaved() {
+  const card = document.getElementById("savedCard");
+  const list = document.getElementById("savedList");
+  if (S.saved.length === 0) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  list.innerHTML = "";
+  S.saved.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.className = "saveditem";
+    let inner = '<div class="sdate">' + esc(item.date) + '</div>';
+    inner += '<div class="stext">' + esc(item.text) + '</div>';
+    if (item.memo) {
+      inner += '<div class="memo"><span class="mlabel">更新メモ</span><br>' + esc(item.memo) + '</div>';
+    } else {
+      inner += '<textarea id="memoIn' + idx + '" placeholder="実際のAは？ 本当のひっかかりは？ 予想外のBは？" style="min-height:48px; font-size:13px; margin-top:4px;"></textarea>';
+      inner += '<div style="margin-top:6px; display:flex; gap:6px;">' +
+        '<button class="btn small" onclick="saveMemo(' + idx + ')">更新メモを残す</button>' +
+        '<button class="btn ghost small" onclick="deleteSaved(' + idx + ')">削除</button></div>';
+    }
+    div.innerHTML = inner;
+    list.appendChild(div);
+  });
+}
+
+function saveMemo(idx) {
+  const ta = document.getElementById("memoIn" + idx);
+  const v = ta ? ta.value.trim() : "";
+  if (!v) { toast("一言でかまいません。子どもの事実をひとつ。"); return; }
+  S.saved[idx].memo = v;
+  save();
+  addPoints(2);
+  renderSaved();
+  toast("外れた主眼は、失敗ではなく、子どもを一つ深く知った記録です。", 3800);
+}
+
+function deleteSaved(idx) {
+  if (!confirm("この主眼を削除しますか？")) return;
+  S.saved.splice(idx, 1);
+  save();
+  renderSaved();
+}
+
+/* ===================== 記録 ===================== */
+
+function renderRecord() {
+  document.getElementById("stPoints").textContent = S.points;
+  document.getElementById("stStreak").textContent = S.streak;
+  document.getElementById("stAcc").textContent =
+    S.quizAnswered > 0 ? Math.round(100 * S.quizCorrect / S.quizAnswered) + "%" : "-";
+  document.getElementById("stWrote").textContent = S.saved.length;
+
+  // 次の段位まで
+  const cur = rankOf(S.points);
+  const next = RANKS.find(r => r.pt > S.points);
+  const rp = document.getElementById("rankProgress");
+  if (next) {
+    rp.innerHTML = "いまの段位: <b>" + esc(cur.name) + "</b>　／　次の「" + esc(next.name) + "」まで、あと <b>" + (next.pt - S.points) + "</b> ポイント。";
+  } else {
+    rp.innerHTML = "いまの段位: <b>" + esc(cur.name) + "</b>。ここから先は、教室が道場です。";
+  }
+
+  // 弱点バー（△の集計）
+  const counts = new Array(CHECK_ITEMS.length).fill(0);
+  let any = false;
+  S.saved.forEach(item => {
+    (item.checks || []).forEach((c, i) => { if (c === 2) { counts[i]++; any = true; } });
+  });
+  const bars = document.getElementById("weakBars");
+  const lead = document.getElementById("weakLead");
+  bars.innerHTML = "";
+  if (!any) {
+    lead.textContent = "執筆室でセルフチェックすると、ここに伸びしろが表れます。";
+    return;
+  }
+  const max = Math.max(...counts, 1);
+  const weakest = CHECK_ITEMS[counts.indexOf(Math.max(...counts))];
+  lead.innerHTML = "あなたの伸びしろは「<b>" + esc(weakest) + "</b>」。狙いが分かれば、もう半分直っています。";
+  CHECK_ITEMS.forEach((name, i) => {
+    const row = document.createElement("div");
+    row.className = "barrow";
+    row.innerHTML = '<span class="bname">' + esc(name) + '</span>' +
+      '<span class="btrack"><span class="bfill" style="width:' + Math.round(100 * counts[i] / max) + '%"></span></span>' +
+      '<span class="bnum">' + counts[i] + '</span>';
+    bars.appendChild(row);
+  });
+}
+
+/* ===================== 起動 ===================== */
+
+initQuiz();
+initRepair();
+renderChecks();
+renderSaved();
+renderHeader();
+</script>
+</body>
+</html>
