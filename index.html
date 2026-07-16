@@ -17,12 +17,12 @@
   }
   .topbar{position:sticky; top:0; z-index:20;}
   header{
-    background:var(--navy); color:#fff; padding:14px 16px 10px;
+    background:var(--navy); color:#fff; padding:10px 16px 8px;
   }
-  header h1{font-size:20px; letter-spacing:.12em;}
-  header .sub{font-size:11px; opacity:.75; letter-spacing:.05em;}
-  header .sub-quote{font-size:12px; opacity:.85; margin-top:2px; font-weight:bold;}
-  .rankline{display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;}
+  header h1{font-size:19px; letter-spacing:.1em;}
+  header .sub{font-size:10.5px; opacity:.7; letter-spacing:.05em;}
+  header .sub-quote{font-size:11.5px; opacity:.82; margin-top:1px;}
+  .rankline{display:flex; align-items:center; gap:8px; margin-top:5px; flex-wrap:wrap;}
   .rankbadge{
     background:var(--orange); color:#fff; border-radius:999px;
     font-size:12px; font-weight:bold; padding:2px 12px;
@@ -32,7 +32,7 @@
     padding:2px 10px; font-weight:bold;
   }
   .streak{font-size:12px; opacity:.9;}
-  .rankbarWrap{display:flex; align-items:center; gap:8px; margin-top:7px;}
+  .rankbarWrap{display:flex; align-items:center; gap:8px; margin-top:5px;}
   .rankbarTrack{flex:1; background:rgba(255,255,255,.25); height:6px; border-radius:3px; overflow:hidden;}
   .rankbarFill{background:var(--orange); height:100%; border-radius:3px; transition:width .3s; min-width:2px;}
   .rankbarLabel{font-size:10.5px; opacity:.85; white-space:nowrap; flex-shrink:0;}
@@ -77,6 +77,8 @@
   .choices button.correct{border-color:var(--good); background:#e9f5ee; font-weight:bold;}
   .choices button.wrong{border-color:var(--bad); background:#faeae6;}
   .choices button.dim{opacity:.5;}
+  .choices button.correct::before{content:"\2713 "; font-weight:bold; color:var(--good);}
+  .choices button.wrong::before{content:"\2717 "; font-weight:bold; color:var(--bad);}
   .kaisetsu{margin-top:14px; border-top:1px dashed var(--line); padding-top:12px;}
   .kaisetsu .row{display:flex; gap:8px; margin-bottom:8px; align-items:flex-start;}
   .kaisetsu .tag{
@@ -163,6 +165,10 @@
     border:1px solid var(--teal); border-radius:999px; padding:1px 10px; margin-bottom:8px;
   }
   .progressnote{font-size:12px; color:#8a969c; margin-bottom:10px;}
+  .writehints{margin-top:12px; display:flex; flex-direction:column; gap:6px;}
+  .writehint{font-size:12.5px; padding:8px 10px; border-radius:8px; line-height:1.6;}
+  .writehint.warn{background:var(--warm); border-left:3px solid var(--orange);}
+  .writehint.ok{background:#e9f5ee; border-left:3px solid var(--good);}
   .divider{border:none; border-top:1px dashed var(--line); margin:16px 0;}
   .roomaim{
     display:inline-block; font-size:11.5px; color:var(--teal); font-weight:bold;
@@ -355,7 +361,8 @@
       <div id="assembleArea" style="display:none;">
         <hr class="divider">
         <div class="whead" style="margin-bottom:4px;"><span class="wtitle">主眼の一文（手直しOK）</span></div>
-        <textarea id="assembled" style="min-height:96px;"></textarea>
+        <textarea id="assembled" style="min-height:96px;" oninput="renderWriteHints()"></textarea>
+        <div class="writehints" id="writeHints"></div>
 
         <div class="whead" style="margin:14px 0 4px;"><span class="wtitle">7項目セルフチェック</span></div>
         <div class="wguide">全部○でなくて大丈夫。弱い場所が分かれば、授業は直せます。</div>
@@ -389,6 +396,11 @@
       <div id="rankProgress" style="margin-top:14px; font-size:13px;"></div>
     </div>
     <div class="card">
+      <h2>見抜きの目 ― 診断の実力</h2>
+      <p class="lead" id="diagLead">今日の一問に答えると、どのタイプを見抜けているかが表れます。</p>
+      <div class="bars" id="diagBars"></div>
+    </div>
+    <div class="card">
       <h2>七つの目のいまの強さ</h2>
       <p class="lead" id="weakLead">執筆室でセルフチェックすると、ここに伸びしろが表れます。</p>
       <div class="bars" id="weakBars"></div>
@@ -418,10 +430,10 @@
 const QUIZ_STEM = "この主眼の書き方は不十分で、修正が必要です。どうしてですか？";
 
 const WEAK_CHOICES = [
-  { key: "katsudou", label: "学習活動しか書いていない" },
-  { key: "totatsu",  label: "到達する姿しか書いていない" },
-  { key: "kyoshi",   label: "教師の指導だけが書いてある" },
-  { key: "chusho",   label: "具体的な学習の姿がなく、抽象語だけである" }
+  { key: "katsudou", label: "学習活動しか書いていない",             short: "活動だけ" },
+  { key: "totatsu",  label: "到達する姿しか書いていない",           short: "到達だけ" },
+  { key: "kyoshi",   label: "教師の指導だけが書いてある",           short: "教師だけ" },
+  { key: "chusho",   label: "具体的な学習の姿がなく、抽象語だけである", short: "抽象語だけ" }
 ];
 
 const QUIZ = [
@@ -748,8 +760,18 @@ const RANKS = [
   { pt: 10,  name: "A捕まえ名人" },
   { pt: 25,  name: "ひっかかり職人" },
   { pt: 50,  name: "B仕立て師" },
-  { pt: 100, name: "主眼師範" }
+  { pt: 100, name: "主眼師範" },
+  { pt: 180, name: "主眼名人" },
+  { pt: 300, name: "免許皆伝" }
 ];
+
+// 診断カテゴリ → 直すべき部品（修理工房のタイプ）
+const KEY_TO_REPAIR = {
+  katsudou: "B修理",      // 活動だけ → Bを足す
+  totatsu:  "動詞修理",   // 到達だけ → プロセス・動詞を足す
+  kyoshi:   "A修理",      // 教師だけ → 子どもを主語に
+  chusho:   "動詞修理"    // 抽象語だけ → 具体の動詞に
+};
 
 /* ===================== 状態 ===================== */
 
@@ -765,7 +787,8 @@ function defaultState() {
     repairDone: [],       // 完了した修理のindex
     saved: [],            // {date, text, checks:[0/1/2...], memo}
     rankName: "主眼見習い",
-    seenGuide: false
+    seenGuide: false,
+    quizByKey: {}         // { katsudou:{seen,correct}, ... } 診断カテゴリ別の成績
   };
 }
 
@@ -939,6 +962,10 @@ function answerQuiz(key, clickedBtn) {
   S.quizAnswered++;
   if (correct) S.quizCorrect++;
 
+  if (!S.quizByKey[q.key]) S.quizByKey[q.key] = { seen: 0, correct: 0 };
+  S.quizByKey[q.key].seen++;
+  if (correct) S.quizByKey[q.key].correct++;
+
   if (currentQuiz.isDaily) {
     const today = todayStr();
     const yesterday = new Date(Date.now() - 86400000);
@@ -960,13 +987,30 @@ function answerQuiz(key, clickedBtn) {
     html += '<div class="row"><span class="tag' + (i === 3 ? " o" : "") + '">' + tags[i] + '</span><span>' + esc(line) + '</span></div>';
   });
   html += '</div>';
-  if (currentQuiz.isDaily) {
-    html += '<div style="margin-top:10px;"><button class="btn ghost small" onclick="startPractice()">もう一問（練習）</button></div>';
-  } else {
-    html += '<div style="margin-top:10px;"><button class="btn ghost small" onclick="startPractice()">さらにもう一問</button></div>';
-  }
+  const repairType = KEY_TO_REPAIR[q.key];
+  html += '<div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">';
+  html += '<button class="btn small" onclick="goToRepairType(\'' + repairType + '\')">この弱点を直しに行く（' + esc(repairType) + '）</button>';
+  html += '<button class="btn ghost small" onclick="startPractice()">' + (currentQuiz.isDaily ? "もう一問（練習）" : "さらにもう一問") + '</button>';
+  html += '</div>';
   document.getElementById("quizResult").innerHTML = html;
   renderHeader();
+}
+
+function goToRepairType(type) {
+  // そのタイプの、未修理の問題を優先して開く。なければタイプ内の先頭。
+  let target = -1;
+  for (let i = 0; i < REPAIRS.length; i++) {
+    if (REPAIRS[i].type === type && !S.repairDone.includes(i)) { target = i; break; }
+  }
+  if (target < 0) {
+    for (let i = 0; i < REPAIRS.length; i++) {
+      if (REPAIRS[i].type === type) { target = i; break; }
+    }
+  }
+  if (target < 0) target = 0;
+  repairIdx = target;
+  goToView("repair");
+  renderRepair();
 }
 
 /* ===================== 修理工房 ===================== */
@@ -1085,7 +1129,47 @@ function assemble() {
   document.getElementById("assembled").value = parts.join("");
   document.getElementById("assembleArea").style.display = "block";
   renderChecks();
+  renderWriteHints();
   document.getElementById("assembled").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// 機械的なルールチェック（AIではない・止めない・気づきを返すだけ）
+function renderWriteHints() {
+  const box = document.getElementById("writeHints");
+  if (!box) return;
+  const A = document.getElementById("boxA").value.trim();
+  const H = document.getElementById("boxHook").value.trim();
+  const P = document.getElementById("boxP").value.trim();
+  const sentence = document.getElementById("assembled").value.trim();
+
+  const hints = [];
+  // ① 文末が「〜できる」で結ばれているか
+  if (sentence && !/でき(る|ます)。?$/.test(sentence)) {
+    hints.push("文末が「〜できる」で結ばれていません。Bは子どもの姿を『〜することができる』で結ぶと締まります。");
+  }
+  // ② Aが「できない子」寄りの表現になっていないか
+  if (A && /(でき(ない|てい)|出来(ない|てい)|不十分|苦手|わからな|分からな|理解.{0,4}ない|意欲が低|力がない|身に(付|つ)いてい?ない)/.test(A)) {
+    hints.push("Aが「できない子」寄りかもしれません。欠点ではなく、今もっている見方に言い換えると、授業の芯が立ちます。");
+  }
+  // ③ Bの動詞が抽象的でないか
+  if (/(考える|考えられる|わかる|分かる|理解する|理解できる|頑張る|がんばる|取り組む|深める)(ことができる)?。?$/.test(sentence)) {
+    hints.push("Bの動詞が抽象的かもしれません。比べる・関係付ける・説明する・選ぶ・調整するなど、教科の動詞に置き換えると見取れます。");
+  }
+  // ④ ひっかかり・プロセスの空欄
+  if (!H) hints.push("ひっかかりが空です。Aのままでは説明できない出来事を、一つだけ。");
+  if (!P) hints.push("プロセスが空です。何に目を向け、何と何を比べるかを、一言。");
+
+  box.innerHTML = "";
+  if (hints.length === 0) {
+    box.innerHTML = '<div class="writehint ok">機械チェックは通過。あとは、あなたの目で7項目をどうぞ。</div>';
+    return;
+  }
+  hints.forEach(h => {
+    const d = document.createElement("div");
+    d.className = "writehint warn";
+    d.textContent = h;
+    box.appendChild(d);
+  });
 }
 
 function renderChecks() {
@@ -1219,6 +1303,9 @@ function renderRecord() {
     rp.innerHTML = "いまの段位: <b>" + esc(cur.name) + "</b>。ここから先は、教室が道場です。";
   }
 
+  // 見抜きの目（診断カテゴリ別の実力）
+  renderDiag();
+
   // 弱点バー（△の集計）
   const counts = new Array(CHECK_ITEMS.length).fill(0);
   let any = false;
@@ -1241,6 +1328,39 @@ function renderRecord() {
     row.innerHTML = '<span class="bname">' + esc(name) + '</span>' +
       '<span class="btrack"><span class="bfill" style="width:' + Math.round(100 * counts[i] / max) + '%"></span></span>' +
       '<span class="bnum">' + counts[i] + '</span>';
+    bars.appendChild(row);
+  });
+}
+
+function renderDiag() {
+  const bars = document.getElementById("diagBars");
+  const lead = document.getElementById("diagLead");
+  bars.innerHTML = "";
+  const seen = WEAK_CHOICES.filter(c => (S.quizByKey[c.key] || {}).seen);
+  if (seen.length === 0) {
+    lead.textContent = "今日の一問に答えると、どのタイプを見抜けているかが表れます。";
+    return;
+  }
+  // いちばん見抜きにくい＝的中率が最も低いカテゴリ（挑戦済みの中で）
+  let weakest = null, weakestAcc = 2;
+  seen.forEach(c => {
+    const s = S.quizByKey[c.key];
+    const acc = s.correct / s.seen;
+    if (acc < weakestAcc) { weakestAcc = acc; weakest = c; }
+  });
+  if (weakest && weakestAcc < 1) {
+    lead.innerHTML = "いちばん見抜きにくいのは「<b>" + esc(weakest.short) + "</b>」の主眼。修理工房の同じタイプで手を動かすと、目が慣れます。";
+  } else {
+    lead.innerHTML = "どのタイプも見抜けています。この目を、明日の指導案でも。";
+  }
+  WEAK_CHOICES.forEach(c => {
+    const s = S.quizByKey[c.key] || { seen: 0, correct: 0 };
+    const acc = s.seen ? Math.round(100 * s.correct / s.seen) : 0;
+    const row = document.createElement("div");
+    row.className = "barrow";
+    row.innerHTML = '<span class="bname">' + esc(c.short) + '</span>' +
+      '<span class="btrack"><span class="bfill" style="width:' + (s.seen ? acc : 0) + '%"></span></span>' +
+      '<span class="bnum">' + (s.seen ? s.correct + "/" + s.seen : "—") + '</span>';
     bars.appendChild(row);
   });
 }
